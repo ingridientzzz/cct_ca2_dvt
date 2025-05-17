@@ -17,16 +17,9 @@ PLOTLY_TEMPLATE = 'plotly_white'
 # load data - use st.cache_data for more responsive app
 @st.cache_data
 def load_data():
-    # Ensure your CSV files (MYE5_Table8.csv, MYEB1_Table9.csv) are in the
-    # same directory as this script, or update the path below.
-    # If they are in a subdirectory called 'data', use "./data/MYE5_Table8.csv"
-    try:
-        df_density_raw = pd.read_csv("MYE5_Table8.csv")
-        df_age_gender_raw = pd.read_csv("MYEB1_Table9.csv")
-    except FileNotFoundError:
-        st.error("Error: Data files (MYE5_Table8.csv, MYEB1_Table9.csv) not found. "
-                 "Make sure they are in the same directory as app2.py or update the path in the load_data function.")
-        st.stop() # Stop execution if files are not found
+    # Assuming CSV files are always present in ./data/
+    df_density_raw = pd.read_csv("./data/MYE5_Table8.csv")
+    df_age_gender_raw = pd.read_csv("./data/MYEB1_Table9.csv")
     return df_density_raw, df_age_gender_raw
 
 @st.cache_data
@@ -270,7 +263,7 @@ if global_selected_year_display == "2011 Only":
 elif global_selected_year_display == "2022 Only":
     year_for_gender_comp = 2022
 elif global_selected_year_display == "Comparison (2011 & 2022)":
-    year_for_gender_comp = 2022 
+    year_for_gender_comp = 2022
     st.info("Gender Population Comparison chart defaults to 2022 data when 'Comparison (2011 & 2022)' is selected globally.")
 
 
@@ -330,7 +323,7 @@ else:
                     )
                 ))
 
-        if not fig_gender_comp.data: 
+        if not fig_gender_comp.data: # No traces added
              st.plotly_chart(create_empty_figure(f"No data for the selected gender(s) in {year_for_gender_comp} {age_title_part}"), use_container_width=True)
         else:
             fig_gender_comp.update_layout(
