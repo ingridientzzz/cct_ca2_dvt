@@ -2,4 +2,4 @@
 base="system"
 
 [layout]
-wideMode = false
+wideMode = true
