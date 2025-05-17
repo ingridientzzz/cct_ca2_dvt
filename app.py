@@ -403,4 +403,4 @@ else:
 # footer
 st.markdown("---")
 url = "https://github.com/ingridientzzz"
-st.markdown(f"[profile: ingridientzzz]({url})")
+st.markdown(f"[Created by: ingridientzzz]({url})")
