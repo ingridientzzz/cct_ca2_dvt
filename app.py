@@ -6,6 +6,9 @@ import plotly.graph_objects as go
 import openpyxl
 import os
 
+# set streamlit to Widdemode by default
+st.set_page_config(layout=“wide”)
+
 # Configs
 FONT_FAMILY = '"Helvetica Neue", Helvetica, Arial, sans-serif'
 # Okabe & Ito color-blind safe palette
@@ -151,6 +154,7 @@ global_selected_age_band = st.sidebar.selectbox(
 )
 
 # Main Body
+
 st.title("UK Population Dashboard: 2011 vs 2022")
 st.markdown("---")
 
