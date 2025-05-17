@@ -3,68 +3,38 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-from streamlit_js_eval import streamlit_js_eval # Added for theme detection
 
-# --- Theme Detection and Plotly Template Setup ---
-# Determine Plotly template based on Streamlit theme
-# This JS attempts to get the theme set by Streamlit on the body's data-baseweb attribute.
-# Falls back to prefers-color-scheme if the attribute isn't found.
-js_to_get_theme = """
-function getStreamlitTheme() {
-    const streamlitDoc = window.parent.document;
-    if (streamlitDoc && streamlitDoc.body) {
-        const theme = streamlitDoc.body.getAttribute('data-baseweb');
-        if (theme === 'dark' || theme === 'light') {
-            return theme;
-        }
-    }
-    // Fallback if data-baseweb is not available or not set yet (e.g., initial load might be too fast)
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        return 'dark';
-    }
-    return 'light'; // Default to light
-}
-getStreamlitTheme();
-"""
-try:
-    current_streamlit_theme = streamlit_js_eval(js_to_get_theme)
-except Exception:
-    # In case of any JS evaluation error, default to light theme
-    current_streamlit_theme = "light"
-
-if current_streamlit_theme == "dark":
-    plotly_template = "plotly_dark"
-    highlight_fill_color = "rgba(255, 255, 255, 0.15)" # Lighter highlight for dark theme
-else:
-    plotly_template = "plotly_white"
-    highlight_fill_color = "rgba(0, 0, 0, 0.1)"   # Darker highlight for light theme
-# --- End Theme Detection ---
-
+# Configs
+FONT_FAMILY = '"Helvetica Neue", Helvetica, Arial, sans-serif'
+# Okabe & Ito color-blind safe palette
+COLOR_BG = '#FFFFFF'
+COLOR_TEXT = '#000000'
+COLOR_PRIMARY = '#56B4E9' # sky blue (Used for Male 2011 in dist graph)
+COLOR_SECONDARY = '#999999' # grey
+COLOR_MALE = '#0072B2' # blue (Used for Male 2022 in dist graph)
+COLOR_FEMALE = '#E69F00' # orange (Used for Female 2022 in dist graph)
+COLOR_FEMALE_2011_DIST = '#CC79A7' # Reddish Purple (For Female 2011 in dist graph)
+PLOTLY_TEMPLATE = 'plotly_white'
 
 # load data - use st.cache_data for more responsive app
 @st.cache_data
 def load_data():
     # Assuming CSV files are always present in ./data/
-    # Make sure these paths are correct for your environment
-    try:
-        df_density_raw = pd.read_csv("./data/MYE5_Table8.csv")
-        df_age_gender_raw = pd.read_csv("./data/MYEB1_Table9.csv")
-    except FileNotFoundError:
-        st.error("Data files not found. Please ensure 'MYE5_Table8.csv' and 'MYEB1_Table9.csv' are in a 'data' subdirectory.")
-        st.stop()
+    df_density_raw = pd.read_csv("./data/MYE5_Table8.csv")
+    df_age_gender_raw = pd.read_csv("./data/MYEB1_Table9.csv")
     return df_density_raw, df_age_gender_raw
 
 @st.cache_data
 def preprocess_density_data(df_density_raw):
     df_density = df_density_raw.rename(columns={
-    'Area (sq km)': 'area_sq_km',
-    'Estimated Population mid-2022': 'population_2022',
-    '2022 people per sq. km': 'density_2022',
-    'Estimated Population mid-2011': 'population_2011',
-    '2011 people per sq. km': 'density_2011',
-    'Name': 'name',
-    'Code': 'code',
-    'Geography': 'geography'
+        'Area (sq km)': 'area_sq_km',
+        'Estimated Population mid-2022': 'population_2022',
+        '2022 people per sq. km': 'density_2022',
+        'Estimated Population mid-2011': 'population_2011',
+        '2011 people per sq. km': 'density_2011',
+        'Name': 'name',
+        'Code': 'code',
+        'Geography': 'geography'
     })
     return df_density
 
@@ -75,14 +45,14 @@ def preprocess_age_gender_data(df_age_gender_raw):
     bins = [-1, 17, 24, 39, 59, 74, np.inf]
     labels = ['0-17', '18-24', '25-39', '40-59', '60-74', '75+']
     df_age_gender_detail['age_band'] = pd.cut(
-    df_age_gender_detail['age_numeric'],
-    bins=bins, labels=labels, right=True
+        df_age_gender_detail['age_numeric'],
+        bins=bins, labels=labels, right=True
     )
     df_age_gender_melted = df_age_gender_detail.melt(
-    id_vars=['name', 'sex', 'age', 'age_numeric', 'age_band'],
-    value_vars=['population_2011', 'population_2022'],
-    var_name='Year_Col',
-    value_name='Population'
+        id_vars=['name', 'sex', 'age', 'age_numeric', 'age_band'],
+        value_vars=['population_2011', 'population_2022'],
+        var_name='Year_Col',
+        value_name='Population'
     )
     df_age_gender_melted['Year'] = df_age_gender_melted['Year_Col'].str.extract(r'(\d+)').astype(int)
     df_age_gender_melted = df_age_gender_melted.drop(columns=['Year_Col'])
@@ -101,28 +71,39 @@ age_bands_raw = ['0-17', '18-24', '25-39', '40-59', '60-74', '75+']
 age_bands_options = ['All Ages'] + age_bands_raw
 
 # helper functions
-def create_empty_figure(title_text, template): # Added template argument
+def create_empty_figure(title_text):
     fig = go.Figure()
     fig.update_layout(
         title=title_text,
         xaxis={'visible': False},
         yaxis={'visible': False},
-        template=template # Use the dynamic template
+        paper_bgcolor=COLOR_BG,
+        plot_bgcolor=COLOR_BG,
+        font={'family': FONT_FAMILY, 'color': COLOR_TEXT}
     )
     return fig
 
 def get_vrect_coords_from_age_band(age_band_str):
+    """
+    Parses an age band string (e.g., '0-17', '75+') and returns
+    the corresponding x-axis category strings for highlighting.
+    The x-axis categories are assumed to be like '0', '1', ..., '17', ..., '75', ..., '90+'.
+    """
     if age_band_str == 'All Ages':
         return None, None
+    
     if age_band_str == '75+':
-        return '75', '90+'
+        return '75', '90+' 
+    
     parts = age_band_str.split('-')
     if len(parts) == 2:
+        # Ensure these are strings, as x-axis 'age' values are strings
         return str(parts[0]), str(parts[1])
-    return None, None
+    
+    return None, None # Fallback for unexpected format
 
-url = "https://github.com/ingridientzzz" # Assuming this is intentional
-st.markdown(f"[profile: ingridientzzz]({url})") # Assuming this is intentional
+url = "https://github.com/ingridientzzz"
+st.markdown(f"[profile: ingridientzzz]({url})")
 st.title("UK Population Dashboard: 2011 vs 2022")
 st.markdown("---")
 
@@ -157,10 +138,10 @@ st.markdown("---")
 # 1: Population Density Comparison
 st.header("Population Density Comparison")
 if not global_selected_locations:
-    st.plotly_chart(create_empty_figure("Please select at least one location.", template=plotly_template), use_container_width=True)
+    st.plotly_chart(create_empty_figure("Please select at least one location."), use_container_width=True)
 else:
     filtered_df_density = df_density[
-    df_density['name'].isin(global_selected_locations)
+        df_density['name'].isin(global_selected_locations)
     ].sort_values('name')
 
     fig_density = go.Figure()
@@ -170,7 +151,7 @@ else:
             x=filtered_df_density['name'],
             y=filtered_df_density['density_2011'],
             name='Density 2011',
-            # marker_color removed, Plotly theme will assign color
+            marker_color=COLOR_SECONDARY if global_selected_year_display == "Comparison (2011 & 2022)" else COLOR_PRIMARY,
             hovertemplate=("**%{x}**<br>" +
                            "2011 Density: %{y:.1f} per sq km<extra></extra>")
         ))
@@ -179,7 +160,7 @@ else:
             x=filtered_df_density['name'],
             y=filtered_df_density['density_2022'],
             name='Density 2022',
-            # marker_color removed, Plotly theme will assign color
+            marker_color=COLOR_PRIMARY,
             hovertemplate=("**%{x}**<br>" +
                            "2022 Density: %{y:.1f} per sq km<extra></extra>")
         ))
@@ -200,9 +181,10 @@ else:
         legend_title_text='Year',
         xaxis={'categoryorder': 'array',
                'categoryarray': sorted(global_selected_locations)},
-        template=plotly_template, # Use dynamic template
+        paper_bgcolor=COLOR_BG,
+        plot_bgcolor=COLOR_BG,
+        font={'family': FONT_FAMILY, 'color': COLOR_TEXT},
         margin=dict(l=40, r=20, t=60, b=40)
-        # Removed paper_bgcolor, plot_bgcolor, font
     )
     st.plotly_chart(fig_density, use_container_width=True)
 st.markdown("---")
@@ -215,7 +197,7 @@ if global_selected_locations:
     if len(global_selected_locations) > 1:
         st.info(f"Displaying age distribution for {loc_for_age_dist} (the first selected location).")
 else:
-    st.plotly_chart(create_empty_figure("Please select a location for age distribution.", template=plotly_template), use_container_width=True)
+    st.plotly_chart(create_empty_figure("Please select a location for age distribution."), use_container_width=True)
 
 if loc_for_age_dist:
     genders_to_plot = []
@@ -227,7 +209,7 @@ if loc_for_age_dist:
         genders_to_plot.extend(['M', 'F'])
 
     if not genders_to_plot:
-        st.plotly_chart(create_empty_figure("Please select a gender.", template=plotly_template), use_container_width=True)
+        st.plotly_chart(create_empty_figure("Please select a gender."), use_container_width=True)
     else:
         fig_age_gender = go.Figure()
         data_found_for_age_dist = False
@@ -242,13 +224,17 @@ if loc_for_age_dist:
                 data_found_for_age_dist = True
                 gender_label = genders_map[gender_code]
 
+                # Assign distinct colors for lines
+                color_2022 = COLOR_MALE if gender_code == 'M' else COLOR_FEMALE
+                color_2011 = COLOR_PRIMARY if gender_code == 'M' else COLOR_FEMALE_2011_DIST
+
                 if global_selected_year_display == "2011 Only" or global_selected_year_display == "Comparison (2011 & 2022)":
                     fig_age_gender.add_trace(go.Scatter(
                         x=filtered_df_age_detail['age'],
                         y=filtered_df_age_detail['population_2011'],
                         name=f'{gender_label} 2011',
                         mode='lines+markers',
-                        # marker_color removed
+                        marker_color=color_2011,
                         line=dict(width=2, dash='dash'),
                         hovertemplate=(f"<b>{gender_label} - Age: %{{x}}</b><br>" +
                                        "2011 Population: %{y:,}<extra></extra>")
@@ -259,14 +245,14 @@ if loc_for_age_dist:
                         y=filtered_df_age_detail['population_2022'],
                         name=f'{gender_label} 2022',
                         mode='lines+markers',
-                        # marker_color removed
+                        marker_color=color_2022,
                         line=dict(width=2),
                         hovertemplate=(f"<b>{gender_label} - Age: %{{x}}</b><br>" +
                                        "2022 Population: %{y:,}<extra></extra>")
                     ))
 
         if not data_found_for_age_dist:
-            st.plotly_chart(create_empty_figure(f"No age distribution data for {loc_for_age_dist} with selected gender/year.", template=plotly_template), use_container_width=True)
+            st.plotly_chart(create_empty_figure(f"No age distribution data for {loc_for_age_dist} with selected gender/year."), use_container_width=True)
         else:
             title_age_dist = f'Population Age Distribution in {loc_for_age_dist}'
             if global_selected_year_display != "Comparison (2011 & 2022)":
@@ -280,17 +266,19 @@ if loc_for_age_dist:
                 xaxis={'type': 'category'},
                 hovermode='x unified',
                 legend_title_text='Gender & Year',
-                template=plotly_template, # Use dynamic template
+                paper_bgcolor=COLOR_BG,
+                plot_bgcolor=COLOR_BG,
+                font={'family': FONT_FAMILY, 'color': COLOR_TEXT},
                 margin=dict(l=40, r=20, t=60, b=40)
-                # Removed paper_bgcolor, plot_bgcolor, font
             )
 
+            # Add highlighting for selected age band
             if global_selected_age_band != 'All Ages':
                 x0_highlight, x1_highlight = get_vrect_coords_from_age_band(global_selected_age_band)
                 if x0_highlight is not None and x1_highlight is not None:
                     fig_age_gender.add_vrect(
                         x0=x0_highlight, x1=x1_highlight,
-                        fillcolor=highlight_fill_color, # Use adaptive highlight color
+                        fillcolor="rgba(128,128,128,0.2)",  # Light grey, semi-transparent
                         layer="below", 
                         line_width=0,
                     )
@@ -305,11 +293,11 @@ if global_selected_year_display == "2011 Only":
 elif global_selected_year_display == "2022 Only":
     year_for_gender_comp = 2022
 elif global_selected_year_display == "Comparison (2011 & 2022)":
-    year_for_gender_comp = 2022 # Defaulting to 2022 for comparison view
+    year_for_gender_comp = 2022
     st.info("Gender Population Comparison chart defaults to 2022 data when 'Comparison (2011 & 2022)' is selected globally.")
 
-if not global_selected_locations or not year_for_gender_comp or not global_selected_age_band: # global_selected_age_band was missing in original condition
-    st.plotly_chart(create_empty_figure("Select year, location(s), and age band for gender comparison.", template=plotly_template), use_container_width=True)
+if not global_selected_locations or not year_for_gender_comp or not global_selected_age_band:
+    st.plotly_chart(create_empty_figure("Select year, location(s), and age band for gender comparison."), use_container_width=True)
 else:
     filtered_df_gender_melted = df_age_gender_melted[
         (df_age_gender_melted['Year'] == year_for_gender_comp) &
@@ -320,14 +308,14 @@ else:
     if global_selected_age_band != 'All Ages':
         filtered_df_gender_melted = filtered_df_gender_melted[filtered_df_gender_melted['age_band'] == global_selected_age_band]
     else:
-        age_title_part = "(All Ages)" # Already set, but explicit
+        age_title_part = "(All Ages)"
 
     grouped_df_gender = filtered_df_gender_melted.groupby(
         ['name', 'sex']
     )['Population'].sum().reset_index()
 
     if grouped_df_gender.empty:
-        st.plotly_chart(create_empty_figure(f"No data for selection in {year_for_gender_comp} {age_title_part}", template=plotly_template), use_container_width=True)
+        st.plotly_chart(create_empty_figure(f"No data for selection in {year_for_gender_comp} {age_title_part}"), use_container_width=True)
     else:
         grouped_df_gender = grouped_df_gender.sort_values(by=['name', 'sex'])
         fig_gender_comp = go.Figure()
@@ -339,7 +327,7 @@ else:
                     x=df_female['name'],
                     y=df_female['Population'],
                     name='Female',
-                    # marker_color removed
+                    marker_color=COLOR_FEMALE,
                     hovertemplate=(
                         "<b>%{x}</b><br>" +
                         "Females: %{y:,}<br>" +
@@ -355,7 +343,7 @@ else:
                     x=df_male['name'],
                     y=df_male['Population'],
                     name='Male',
-                    # marker_color removed
+                    marker_color=COLOR_MALE,
                     hovertemplate=(
                         "<b>%{x}</b><br>" +
                         "Males: %{y:,}<br>" +
@@ -364,8 +352,8 @@ else:
                     )
                 ))
 
-        if not fig_gender_comp.data: # Check if any traces were added
-            st.plotly_chart(create_empty_figure(f"No data for the selected gender(s) in {year_for_gender_comp} {age_title_part}", template=plotly_template), use_container_width=True)
+        if not fig_gender_comp.data:
+             st.plotly_chart(create_empty_figure(f"No data for the selected gender(s) in {year_for_gender_comp} {age_title_part}"), use_container_width=True)
         else:
             fig_gender_comp.update_layout(
                 title=f'Population by Gender in {year_for_gender_comp} {age_title_part}',
@@ -376,9 +364,10 @@ else:
                 legend_title_text='Gender',
                 xaxis={'categoryorder': 'array',
                        'categoryarray': sorted(global_selected_locations)},
-                template=plotly_template, # Use dynamic template
+                paper_bgcolor=COLOR_BG,
+                plot_bgcolor=COLOR_BG,
+                font={'family': FONT_FAMILY, 'color': COLOR_TEXT},
                 margin=dict(l=40, r=20, t=60, b=40)
-                # Removed paper_bgcolor, plot_bgcolor, font
             )
             st.plotly_chart(fig_gender_comp, use_container_width=True)
             
