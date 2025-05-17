@@ -1,2 +1,2 @@
 plotly
-streamlit-js-eval
+#streamlit-js-eval
