@@ -123,11 +123,6 @@ def get_vrect_coords_from_age_band(age_band_str):
     
     return None, None # catch for unexpected format
 
-
-# Main app
-st.title("UK Population Dashboard: 2011 vs 2022")
-st.markdown("---")
-
 # Global selection sidebar
 st.sidebar.header("Global Filters")
 
@@ -154,6 +149,9 @@ global_selected_age_band = st.sidebar.selectbox(
     options=age_bands_options,
     index=0
 )
+
+# Main Body
+st.title("UK Population Dashboard: 2011 vs 2022")
 st.markdown("---")
 
 # 1: Population Density Comparison
