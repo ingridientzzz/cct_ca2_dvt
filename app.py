@@ -89,7 +89,7 @@ def create_empty_figure(title_text):
 
 url = "https://github.com/ingridientzzz"
 # st.write(f"check out this [link]({url})")
-st.markdown(f"[Github: ingridientzzz]({url})")
+st.markdown(f"[profile: ingridientzzz]({url})")
 
 st.title("UK Population Dashboard: 2011 vs 2022")
 st.markdown("---")  # add line to separate sections
