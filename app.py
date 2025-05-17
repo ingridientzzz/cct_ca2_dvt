@@ -1,4 +1,4 @@
-# imoort
+# imports
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -9,10 +9,11 @@ FONT_FAMILY = '"Helvetica Neue", Helvetica, Arial, sans-serif'
 # Okabe & Ito color-blind safe palette
 COLOR_BG = '#FFFFFF'
 COLOR_TEXT = '#000000'
-COLOR_PRIMARY = '#56B4E9' # sky blue
+COLOR_PRIMARY = '#56B4E9' # sky blue (Used for Male 2011 in dist graph)
 COLOR_SECONDARY = '#999999' # grey
-COLOR_MALE = '#0072B2' # blue
-COLOR_FEMALE = '#E69F00' # orange
+COLOR_MALE = '#0072B2' # blue (Used for Male 2022 in dist graph)
+COLOR_FEMALE = '#E69F00' # orange (Used for Female 2022 in dist graph)
+COLOR_FEMALE_2011_DIST = '#CC79A7' # Reddish Purple (For Female 2011 in dist graph)
 PLOTLY_TEMPLATE = 'plotly_white'
 
 # load data - use st.cache_data for more responsive app
@@ -64,13 +65,12 @@ df_density = preprocess_density_data(df_density_raw)
 df_age_gender_detail, df_age_gender_melted = preprocess_age_gender_data(df_age_gender_raw)
 
 # get values for dropdowns
-# Using age_gender_locations as it's comprehensive
 all_locations = sorted(list(df_age_gender_melted['name'].unique()))
 genders_map = {'M': 'Male', 'F': 'Female'}
 age_bands_raw = ['0-17', '18-24', '25-39', '40-59', '60-74', '75+']
 age_bands_options = ['All Ages'] + age_bands_raw
 
-# helper functions for empty figs / no data
+# helper functions
 def create_empty_figure(title_text):
     fig = go.Figure()
     fig.update_layout(
@@ -83,13 +83,32 @@ def create_empty_figure(title_text):
     )
     return fig
 
+def get_vrect_coords_from_age_band(age_band_str):
+    """
+    Parses an age band string (e.g., '0-17', '75+') and returns
+    the corresponding x-axis category strings for highlighting.
+    The x-axis categories are assumed to be like '0', '1', ..., '17', ..., '75', ..., '90+'.
+    """
+    if age_band_str == 'All Ages':
+        return None, None
+    
+    if age_band_str == '75+':
+        return '75', '90+' 
+    
+    parts = age_band_str.split('-')
+    if len(parts) == 2:
+        # Ensure these are strings, as x-axis 'age' values are strings
+        return str(parts[0]), str(parts[1])
+    
+    return None, None # Fallback for unexpected format
+
 url = "https://github.com/ingridientzzz"
 st.markdown(f"[profile: ingridientzzz]({url})")
 st.title("UK Population Dashboard: 2011 vs 2022")
-st.markdown("---") # add line to separate sections
+st.markdown("---")
 
 # --- Global Controls Section ---
-st.sidebar.header("Filters:")
+st.sidebar.header("Global Filters")
 
 global_selected_locations = st.sidebar.multiselect(
     "Select Geographic Location(s):",
@@ -112,11 +131,9 @@ global_selected_gender_display = st.sidebar.selectbox(
 global_selected_age_band = st.sidebar.selectbox(
     "Select Age Band:",
     options=age_bands_options,
-    index=0 # Default to 'All Ages'
+    index=0
 )
 st.markdown("---")
-# --- End Global Controls Section ---
-
 
 # 1: Population Density Comparison
 st.header("Population Density Comparison")
@@ -172,12 +189,11 @@ else:
     st.plotly_chart(fig_density, use_container_width=True)
 st.markdown("---")
 
-
 # 2: Population Age Distribution
 st.header("Population Age Distribution")
 loc_for_age_dist = None
 if global_selected_locations:
-    loc_for_age_dist = global_selected_locations[0] # Use the first selected location
+    loc_for_age_dist = global_selected_locations[0]
     if len(global_selected_locations) > 1:
         st.info(f"Displaying age distribution for {loc_for_age_dist} (the first selected location).")
 else:
@@ -208,13 +224,17 @@ if loc_for_age_dist:
                 data_found_for_age_dist = True
                 gender_label = genders_map[gender_code]
 
+                # Assign distinct colors for lines
+                color_2022 = COLOR_MALE if gender_code == 'M' else COLOR_FEMALE
+                color_2011 = COLOR_PRIMARY if gender_code == 'M' else COLOR_FEMALE_2011_DIST
+
                 if global_selected_year_display == "2011 Only" or global_selected_year_display == "Comparison (2011 & 2022)":
                     fig_age_gender.add_trace(go.Scatter(
                         x=filtered_df_age_detail['age'],
                         y=filtered_df_age_detail['population_2011'],
                         name=f'{gender_label} 2011',
                         mode='lines+markers',
-                        marker_color=COLOR_MALE if gender_code == 'M' else COLOR_FEMALE,
+                        marker_color=color_2011,
                         line=dict(width=2, dash='dash'),
                         hovertemplate=(f"<b>{gender_label} - Age: %{{x}}</b><br>" +
                                        "2011 Population: %{y:,}<extra></extra>")
@@ -225,7 +245,7 @@ if loc_for_age_dist:
                         y=filtered_df_age_detail['population_2022'],
                         name=f'{gender_label} 2022',
                         mode='lines+markers',
-                        marker_color=COLOR_MALE if gender_code == 'M' else COLOR_FEMALE,
+                        marker_color=color_2022,
                         line=dict(width=2),
                         hovertemplate=(f"<b>{gender_label} - Age: %{{x}}</b><br>" +
                                        "2022 Population: %{y:,}<extra></extra>")
@@ -238,7 +258,7 @@ if loc_for_age_dist:
             if global_selected_year_display != "Comparison (2011 & 2022)":
                 year_suffix_age = global_selected_year_display.replace(" Only", "")
                 title_age_dist += f' ({year_suffix_age})'
-
+            
             fig_age_gender.update_layout(
                 title=title_age_dist,
                 xaxis_title='Age',
@@ -251,13 +271,22 @@ if loc_for_age_dist:
                 font={'family': FONT_FAMILY, 'color': COLOR_TEXT},
                 margin=dict(l=40, r=20, t=60, b=40)
             )
+
+            # Add highlighting for selected age band
+            if global_selected_age_band != 'All Ages':
+                x0_highlight, x1_highlight = get_vrect_coords_from_age_band(global_selected_age_band)
+                if x0_highlight is not None and x1_highlight is not None:
+                    fig_age_gender.add_vrect(
+                        x0=x0_highlight, x1=x1_highlight,
+                        fillcolor="rgba(128,128,128,0.2)",  # Light grey, semi-transparent
+                        layer="below", 
+                        line_width=0,
+                    )
             st.plotly_chart(fig_age_gender, use_container_width=True)
 st.markdown("---")
 
-
 # 3: Gender Population Comparison
 st.header("Gender Population Comparison")
-
 year_for_gender_comp = None
 if global_selected_year_display == "2011 Only":
     year_for_gender_comp = 2011
@@ -266,7 +295,6 @@ elif global_selected_year_display == "2022 Only":
 elif global_selected_year_display == "Comparison (2011 & 2022)":
     year_for_gender_comp = 2022
     st.info("Gender Population Comparison chart defaults to 2022 data when 'Comparison (2011 & 2022)' is selected globally.")
-
 
 if not global_selected_locations or not year_for_gender_comp or not global_selected_age_band:
     st.plotly_chart(create_empty_figure("Select year, location(s), and age band for gender comparison."), use_container_width=True)
@@ -324,7 +352,7 @@ else:
                     )
                 ))
 
-        if not fig_gender_comp.data: # No traces added
+        if not fig_gender_comp.data:
              st.plotly_chart(create_empty_figure(f"No data for the selected gender(s) in {year_for_gender_comp} {age_title_part}"), use_container_width=True)
         else:
             fig_gender_comp.update_layout(
@@ -342,3 +370,4 @@ else:
                 margin=dict(l=40, r=20, t=60, b=40)
             )
             st.plotly_chart(fig_gender_comp, use_container_width=True)
+            
