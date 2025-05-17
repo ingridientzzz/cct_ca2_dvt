@@ -89,7 +89,7 @@ st.title("UK Population Dashboard: 2011 vs 2022")
 st.markdown("---") # add line to separate sections
 
 # --- Global Controls Section ---
-st.sidebar.header("Filters:")
+st.sidebar.header("Select filters:")
 
 global_selected_locations = st.sidebar.multiselect(
     "Select Geographic Location(s):",
