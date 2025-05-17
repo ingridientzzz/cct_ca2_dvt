@@ -14,7 +14,7 @@ COLOR_SECONDARY = '#999999' # grey
 COLOR_MALE = '#0072B2' # blue (Used for Male 2022 in dist graph)
 COLOR_FEMALE = '#E69F00' # orange (Used for Female 2022 in dist graph)
 COLOR_FEMALE_2011_DIST = '#CC79A7' # Reddish Purple (For Female 2011 in dist graph)
-PLOTLY_TEMPLATE = 'plotly_white'
+# PLOTLY_TEMPLATE = 'plotly_white'
 
 # load data - use st.cache_data for more responsive app
 @st.cache_data
@@ -77,8 +77,8 @@ def create_empty_figure(title_text):
         title=title_text,
         xaxis={'visible': False},
         yaxis={'visible': False},
-        paper_bgcolor=COLOR_BG,
-        plot_bgcolor=COLOR_BG,
+        #paper_bgcolor=COLOR_BG,
+        #plot_bgcolor=COLOR_BG,
         font={'family': FONT_FAMILY, 'color': COLOR_TEXT}
     )
     return fig
@@ -181,9 +181,11 @@ else:
         legend_title_text='Year',
         xaxis={'categoryorder': 'array',
                'categoryarray': sorted(global_selected_locations)},
-        paper_bgcolor=COLOR_BG,
-        plot_bgcolor=COLOR_BG,
-        font={'family': FONT_FAMILY, 'color': COLOR_TEXT},
+        #paper_bgcolor=COLOR_BG,
+        #plot_bgcolor=COLOR_BG,
+        font={'family': FONT_FAMILY
+              #,  'color': COLOR_TEXT
+             },
         margin=dict(l=40, r=20, t=60, b=40)
     )
     st.plotly_chart(fig_density, use_container_width=True)
@@ -224,7 +226,7 @@ if loc_for_age_dist:
                 data_found_for_age_dist = True
                 gender_label = genders_map[gender_code]
 
-                # Assign distinct colors for lines
+                # Assign distinct colors for lines female, male, 2011, 2022
                 color_2022 = COLOR_MALE if gender_code == 'M' else COLOR_FEMALE
                 color_2011 = COLOR_PRIMARY if gender_code == 'M' else COLOR_FEMALE_2011_DIST
 
@@ -233,7 +235,7 @@ if loc_for_age_dist:
                         x=filtered_df_age_detail['age'],
                         y=filtered_df_age_detail['population_2011'],
                         name=f'{gender_label} 2011',
-                        mode='lines+markers',
+                        mode='lines',
                         marker_color=color_2011,
                         line=dict(width=2, dash='dash'),
                         hovertemplate=(f"<b>{gender_label} - Age: %{{x}}</b><br>" +
@@ -244,7 +246,7 @@ if loc_for_age_dist:
                         x=filtered_df_age_detail['age'],
                         y=filtered_df_age_detail['population_2022'],
                         name=f'{gender_label} 2022',
-                        mode='lines+markers',
+                        mode='lines',
                         marker_color=color_2022,
                         line=dict(width=2),
                         hovertemplate=(f"<b>{gender_label} - Age: %{{x}}</b><br>" +
@@ -266,9 +268,11 @@ if loc_for_age_dist:
                 xaxis={'type': 'category'},
                 hovermode='x unified',
                 legend_title_text='Gender & Year',
-                paper_bgcolor=COLOR_BG,
-                plot_bgcolor=COLOR_BG,
-                font={'family': FONT_FAMILY, 'color': COLOR_TEXT},
+                #paper_bgcolor=COLOR_BG,
+                #plot_bgcolor=COLOR_BG,
+                font={'family': FONT_FAMILY
+                      #, 'color': COLOR_TEXT
+                     },
                 margin=dict(l=40, r=20, t=60, b=40)
             )
 
@@ -364,9 +368,11 @@ else:
                 legend_title_text='Gender',
                 xaxis={'categoryorder': 'array',
                        'categoryarray': sorted(global_selected_locations)},
-                paper_bgcolor=COLOR_BG,
-                plot_bgcolor=COLOR_BG,
-                font={'family': FONT_FAMILY, 'color': COLOR_TEXT},
+                #paper_bgcolor=COLOR_BG,
+                #plot_bgcolor=COLOR_BG,
+                font={'family': FONT_FAMILY
+                      #, 'color': COLOR_TEXT
+                     },
                 margin=dict(l=40, r=20, t=60, b=40)
             )
             st.plotly_chart(fig_gender_comp, use_container_width=True)
