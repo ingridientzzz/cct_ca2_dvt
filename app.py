@@ -7,7 +7,7 @@ import openpyxl
 import os
 
 # set streamlit to Widdemode by default
-st.set_page_config(layout=“wide”)
+st.set_page_config(layout='wide')
 
 # Configs
 FONT_FAMILY = '"Helvetica Neue", Helvetica, Arial, sans-serif'
