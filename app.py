@@ -3,6 +3,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
+import openpyxl
+import os
 
 # Configs
 FONT_FAMILY = '"Helvetica Neue", Helvetica, Arial, sans-serif'
@@ -14,15 +16,31 @@ COLOR_SECONDARY = '#999999' # grey
 COLOR_MALE = '#0072B2' # blue (Used for Male 2022 in dist graph)
 COLOR_FEMALE = '#E69F00' # orange (Used for Female 2022 in dist graph)
 COLOR_FEMALE_2011_DIST = '#CC79A7' # Reddish Purple (For Female 2011 in dist graph)
-# PLOTLY_TEMPLATE = 'plotly_white'
 
-# load data - use st.cache_data for more responsive app
+
+# for reading excel loading data
+def parse_excel_file(excel_file):
+    # read into a openpyxl workbook object
+    workbook = openpyxl.load_workbook(excel_file)
+
+    # loop thru sheets tables to extract data - into dictionary
+    tables_dfs = {
+        f'{ws.title}_{tbl.name}': pd.DataFrame([[cell.value for cell in row] for row in ws[tbl.ref][1:]], 
+        columns=[cell.value for cell in ws[tbl.ref][0]]) for ws in workbook for tbl in ws.tables.values() if tbl.ref}
+
+    return tables_dfs
+
+# load data from dictionary
 @st.cache_data
-def load_data():
-    # Assuming CSV files are always present in ./data/
-    df_density_raw = pd.read_csv("./data/MYE5_Table8.csv")
-    df_age_gender_raw = pd.read_csv("./data/MYEB1_Table9.csv")
+def load_data(excel_file):
+
+    tables_dfs = parse_excel_file(excel_file)
+
+    df_density_raw = tables_dfs.get('MYE5_Table8')
+    df_age_gender_raw = tables_dfs.get('MYEB1_Table9')
+
     return df_density_raw, df_age_gender_raw
+
 
 @st.cache_data
 def preprocess_density_data(df_density_raw):
@@ -39,11 +57,9 @@ def preprocess_density_data(df_density_raw):
     return df_density
 
 @st.cache_data
-def preprocess_age_gender_data(df_age_gender_raw):
+def preprocess_age_gender_data(df_age_gender_raw, bins, labels):
     df_age_gender_detail = df_age_gender_raw.copy()
     df_age_gender_detail['age_numeric'] = df_age_gender_detail['age'].replace('90+', 90).astype(int)
-    bins = [-1, 17, 24, 39, 59, 74, np.inf]
-    labels = ['0-17', '18-24', '25-39', '40-59', '60-74', '75+']
     df_age_gender_detail['age_band'] = pd.cut(
         df_age_gender_detail['age_numeric'],
         bins=bins, labels=labels, right=True
@@ -59,16 +75,21 @@ def preprocess_age_gender_data(df_age_gender_raw):
     df_age_gender_melted = df_age_gender_melted.sort_values(by=['name', 'Year', 'sex', 'age_numeric'])
     return df_age_gender_detail, df_age_gender_melted
 
-# prep base dfs
-df_density_raw, df_age_gender_raw = load_data()
-df_density = preprocess_density_data(df_density_raw)
-df_age_gender_detail, df_age_gender_melted = preprocess_age_gender_data(df_age_gender_raw)
 
-# get values for dropdowns
-all_locations = sorted(list(df_age_gender_melted['name'].unique()))
+# build other details
 genders_map = {'M': 'Male', 'F': 'Female'}
-age_bands_raw = ['0-17', '18-24', '25-39', '40-59', '60-74', '75+']
-age_bands_options = ['All Ages'] + age_bands_raw
+bins = [-1, 17, 24, 39, 59, 74, np.inf]
+labels = ['0-17', '18-24', '25-39', '40-59', '60-74', '75+']    # age bands
+age_bands_options = ['All Ages'] + labels
+
+# prep base dfs, dropdowns
+data_folder = os.path.join(os.getcwd(), 'data')
+excel_file = os.path.join(data_folder, 'mye22final.xlsx')
+df_density_raw, df_age_gender_raw = load_data(excel_file)
+df_density = preprocess_density_data(df_density_raw)
+df_age_gender_detail, df_age_gender_melted = preprocess_age_gender_data(df_age_gender_raw, bins, labels)
+all_locations = sorted(list(df_age_gender_melted['name'].unique()))
+
 
 # helper functions
 def create_empty_figure(title_text):
@@ -87,7 +108,7 @@ def get_vrect_coords_from_age_band(age_band_str):
     """
     Parses an age band string (e.g., '0-17', '75+') and returns
     the corresponding x-axis category strings for highlighting.
-    The x-axis categories are assumed to be like '0', '1', ..., '17', ..., '75', ..., '90+'.
+    The x-axis categories are assumed to be: '0', '1', ..., '17', ..., '75', ..., '90+'.
     """
     if age_band_str == 'All Ages':
         return None, None
@@ -97,17 +118,17 @@ def get_vrect_coords_from_age_band(age_band_str):
     
     parts = age_band_str.split('-')
     if len(parts) == 2:
-        # Ensure these are strings, as x-axis 'age' values are strings
+        # return as strings --> x-axis 'age' values are strings
         return str(parts[0]), str(parts[1])
     
-    return None, None # Fallback for unexpected format
+    return None, None # catch for unexpected format
 
-url = "https://github.com/ingridientzzz"
-st.markdown(f"[profile: ingridientzzz]({url})")
+
+# Main app
 st.title("UK Population Dashboard: 2011 vs 2022")
 st.markdown("---")
 
-# --- Global Controls Section ---
+# Global selection sidebar
 st.sidebar.header("Global Filters")
 
 global_selected_locations = st.sidebar.multiselect(
@@ -181,8 +202,8 @@ else:
         legend_title_text='Year',
         xaxis={'categoryorder': 'array',
                'categoryarray': sorted(global_selected_locations)},
-        #paper_bgcolor=COLOR_BG,
-        #plot_bgcolor=COLOR_BG,
+        #paper_bgcolor=COLOR_BG,    --> let plotly defaults handle this
+        #plot_bgcolor=COLOR_BG,     --> let plotly defaults handle this
         font={'family': FONT_FAMILY
               #,  'color': COLOR_TEXT
              },
@@ -377,3 +398,7 @@ else:
             )
             st.plotly_chart(fig_gender_comp, use_container_width=True)
             
+# footer
+st.markdown("---")
+url = "https://github.com/ingridientzzz"
+st.markdown(f"[profile: ingridientzzz]({url})")
