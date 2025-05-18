@@ -75,7 +75,6 @@ def preprocess_density_data_wide(df_density_raw):
         if col in df_density.columns:
             df_density[col] = pd.to_numeric(df_density[col], errors='coerce')
         else:
-            # If a renamed column doesn't exist, it means the original wasn't there or name was different
             st.warning(f"Expected density column '{col}' not found after renaming. Check original column names in Excel table 'MYE5_Table8'.")
             df_density[col] = pd.NA # Add as NA if missing
 
@@ -96,7 +95,7 @@ def melt_density_data(df_density_wide):
     # Convert wide density data to long format for plotting by year
     needed = ['code', 'name', 'geography', 'density_2011', 'density_2022']
     if df_density_wide.empty or not all(col in df_density_wide.columns for col in needed):
-        # st.warning("Cannot melt density data: columns missing.") # This can be noisy if data is just filtered out
+        # st.warning("Cannot melt density data: columns missing.") # can be noisy if data is just filtered out
         return pd.DataFrame()
     df_density_melted = df_density_wide.melt(
         id_vars=['code', 'name', 'geography'],
