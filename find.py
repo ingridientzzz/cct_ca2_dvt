@@ -10,11 +10,11 @@ st.set_page_config(layout='wide')
 FONT_FAMILY = '"Helvetica Neue", Helvetica, Arial, sans-serif'
 COLOR_BG = '#FFFFFF'
 COLOR_TEXT = '#000000'
-COLOR_PRIMARY = '#4477AA'
-COLOR_SECONDARY = '#EE6677'
-COLOR_MALE = '#66CCEE'
-COLOR_FEMALE = '#AA3377'
-COLOR_FEMALE_2011_DIST = '#CC79A7'
+COLOR_PRIMARY = '#6699CC'        # Muted Blue
+COLOR_SECONDARY = '#44AA99'      # Teal
+COLOR_MALE = '#88CCEE'           # Light Cyan / Sky Blue
+COLOR_FEMALE = '#806699'         # Muted Purple
+COLOR_FEMALE_2011_DIST = '#A993BD' # Lighter Muted Purple
 
 @st.cache_data
 def load_data(age_gender_csv_path, density_csv_path):
