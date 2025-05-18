@@ -243,7 +243,7 @@ if not (df_age_gender_melted.empty or df_density_melted.empty) and merged_df.emp
     st.warning("Failed to create merged dataset, though individual melted datasets were present.")
 
 
-def create_empty_figure_notebook(title_text):
+def create_empty_figure_graph(title_text):
     """
      create an empty Plotly fig with title and hidden axes.
     Print a note (passed as param) when plot is empty or data is missing
