@@ -13,7 +13,8 @@ COLOR_BG = '#FFFFFF'
 COLOR_TEXT = '#000000'
 COLOR_PRIMARY = '#6699CC'        # Muted Blue
 COLOR_SECONDARY = '#44AA99'      # Teal
-COLOR_MALE = '#88CCEE'           # Light Cyan / Sky Blue
+COLOR_MALE = '#88CCEE'           # Ligh
+t Cyan / Sky Blue
 COLOR_FEMALE = '#806699'         # Muted Purple
 COLOR_FEMALE_2011_DIST = '#A993BD' # Lighter Muted Purple
 
@@ -39,17 +40,6 @@ def load_data(excel_file_path):
 
     try:
         tables_dfs = parse_excel_file(excel_file_path)
-
-        # Save all extracted tables to CSV (optional, but in your function)
-        for table_name, df in tables_dfs.items():
-            # Ensure df is not None before trying to save
-            if df is not None:
-                csv_path = f'./{table_name}.csv'
-                df.to_csv(csv_path, index=False)
-                print(f"Table {table_name} saved to {csv_path}") # This prints to console
-            else:
-                print(f"Warning: DataFrame for table '{table_name}' is None, not saving to CSV.")
-
 
         # Extract the specific tables needed for the dashboard
         df_density_raw = tables_dfs.get('MYE5_Table8') # Key might be 'MYE5_Table8' or similar
@@ -79,12 +69,11 @@ def preprocess_density_data_wide(df_density_raw):
     if df_density_raw is None or df_density_raw.empty: # Added None check
         return pd.DataFrame()
     df_density = df_density_raw.copy()
-    # Original column names from an ONS Excel table might be slightly different
-    # e.g. 'AREA (sq km)' instead of 'Area (sq km)'
-    # Check the exact column names from your df_density_raw after parsing
+
+    # Check the exact column names from df_density_raw after parsing
     rename_map = {
         'Code': 'code', 'Name': 'name', 'Geography': 'geography',
-        'Area (sq km)': 'area_sq_km', # Check exact casing from your Excel table
+        'Area (sq km)': 'area_sq_km', # Check exact casing from Excel table
         'Estimated Population mid-2022': 'population_2022_abs',
         '2022 people per sq. km': 'density_2022',
         'Estimated Population mid-2011': 'population_2011_abs',
@@ -201,13 +190,10 @@ labels = ['0-17', '18-24', '25-39', '40-59', '60-74', '75+']
 age_bands_options = ['All Ages'] + labels
 
 # --- UPDATED FILE PATH ---
-# Define the path to your single Excel file
-excel_file_path = 'your_data_file.xlsx' # <--- IMPORTANT: Update this to your Excel file name/path
+excel_file_path = './data/mye22final.xlsx'
 
 # Load raw data using the new function
 df_age_gender_raw, df_density_raw = load_data(excel_file_path)
-
-# --- The rest of your script remains largely the same ---
 
 # Preprocess density data to wide and melted (long) formats
 # Add checks for None before passing to preprocessing functions
@@ -283,7 +269,7 @@ def get_vrect_coords_from_age_band(age_band_str):
     if age_band_str == 'All Ages':
         return None, None
     if age_band_str == '75+':
-        return '75', '90+' # Assuming '90+' is a category in your 'age' column for x-axis
+        return '75', '90+' # in case x-axis
     parts = age_band_str.split('-')
     if len(parts) == 2:
         return str(parts[0]), str(parts[1])
