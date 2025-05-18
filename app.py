@@ -554,7 +554,7 @@ elif global_selected_year_display == "2022 Only":
     year_for_gender_comp_actual = 2022
 elif global_selected_year_display == "Comparison (2011 & 2022)":
     year_for_gender_comp_actual = 2022 # Default to 2022 for comparison view
-    st.info("This chart defaults to 2022 data for 'Comparison (2011 & 2022)' year selection, and 1st location in filter.")
+    st.info("This chart defaults to 2022 data for 'Comparison (2011 & 2022)' year selection, and first location selected.")
 
 # df_display_melted comes from df_age_gender_melted
 if df_display_melted.empty:
