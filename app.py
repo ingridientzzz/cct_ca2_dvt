@@ -61,7 +61,7 @@ def preprocess_density_data_wide(df_density_raw):
     # Check the exact column names from df_density_raw after parsing
     rename_map = {
         'Code': 'code', 'Name': 'name', 'Geography': 'geography',
-        'Area (sq km)': 'area_sq_km', # Check exact casing from Excel table
+        'Area (sq km)': 'area_sq_km',
         'Estimated Population mid-2022': 'population_2022_abs',
         '2022 people per sq. km': 'density_2022',
         'Estimated Population mid-2011': 'population_2011_abs',
