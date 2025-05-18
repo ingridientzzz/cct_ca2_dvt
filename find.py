@@ -364,7 +364,7 @@ st.markdown("---")
 
 # 4. Sex Ratio by Density
 st.header("4. Sex Ratio by Population Density")
-st.markdown("Sex ratio is calculated as Males per 100 Females. This chart ignores the global 'Select Sex' filter.")
+st.info("Sex ratio is calculated as Males per 100 Females. This chart ignores the global 'Select Sex' filter.")
 
 if df_display_merged.empty or 'Density' not in df_display_merged.columns:
     st.plotly_chart(create_empty_figure("Merged data with density is not available for sex ratio analysis. Check filters or data files."), use_container_width=True)
