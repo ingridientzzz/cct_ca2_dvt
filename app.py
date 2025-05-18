@@ -244,21 +244,30 @@ if not (df_age_gender_melted.empty or df_density_melted.empty) and merged_df.emp
     st.warning("Failed to create merged dataset, though individual melted datasets were present.")
 
 
-def create_empty_figure(title_text):
-    # Utility: create a blank Plotly figure with a title
+def create_empty_figure_notebook(title_text):
+    """
+     create an empty Plotly fig with title and hidden axes.
+    Print a note (passed as param) when plot is empty or data is missing
+    """
+    print(f"Note: Plot '{title_text}' would be empty or data is missing.")
     fig = go.Figure()
     fig.update_layout(
-        title=title_text, xaxis={'visible': False}, yaxis={'visible': False},
+        title=title_text,
+        xaxis={'visible': False},
+        yaxis={'visible': False},
         font={'family': FONT_FAMILY, 'color': COLOR_TEXT}
     )
     return fig
 
 def get_vrect_coords_from_age_band(age_band_str):
-    # Utility: get x0, x1 for highlighting age band in chart
+    """
+    Utility highlighting for age band highlighting - visual
+    Returns x0, x1 (x-axis loc) for  age band in a chart
+    """
     if age_band_str == 'All Ages':
         return None, None
     if age_band_str == '75+':
-        return '75', '90+' # in case x-axis
+        return '75', '90+'
     parts = age_band_str.split('-')
     if len(parts) == 2:
         return str(parts[0]), str(parts[1])
