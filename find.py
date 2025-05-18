@@ -616,4 +616,4 @@ else:
 st.markdown("---")
 # Attribution footer
 url = "https://github.com/ingridientzzz"
-st.markdown(f"[App based on an original by: ingridientzzz]({url})")
+st.markdown(f"[By: ingridientzzz]({url})")
