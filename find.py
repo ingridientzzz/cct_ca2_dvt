@@ -13,8 +13,7 @@ COLOR_BG = '#FFFFFF'
 COLOR_TEXT = '#000000'
 COLOR_PRIMARY = '#6699CC'        # Muted Blue
 COLOR_SECONDARY = '#44AA99'      # Teal
-COLOR_MALE = '#88CCEE'           # Ligh
-t Cyan / Sky Blue
+COLOR_MALE = '#88CCEE'           # Light Cyan / Sky Blue
 COLOR_FEMALE = '#806699'         # Muted Purple
 COLOR_FEMALE_2011_DIST = '#A993BD' # Lighter Muted Purple
 
