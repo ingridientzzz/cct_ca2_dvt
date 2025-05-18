@@ -3,21 +3,23 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-# import openpyxl # No longer needed
 import os
 
 # set streamlit to Wide mode by default
 st.set_page_config(layout='wide')
 
-# Configs
+
+# --- New Color Palette (Color-Blind Friendly) ---
 FONT_FAMILY = '"Helvetica Neue", Helvetica, Arial, sans-serif'
-COLOR_BG = '#FFFFFF' # Corrected from #FFFF
-COLOR_TEXT = '#000000' # Corrected from #0000
-COLOR_PRIMARY = '#56B4E9' # sky blue (Used for Male 2011 in dist graph, and Density 2022)
-COLOR_SECONDARY = '#999999' # grey (Used for Density 2011 in comparison) # Corrected from #9999
-COLOR_MALE = '#0072B2' # blue (Used for Male 2022 in dist graph)
-COLOR_FEMALE = '#E69F00' # orange (Used for Female 2022 in dist graph)
-COLOR_FEMALE_2011_DIST = '#CC79A7' # Reddish Purple (For Female 2011 in dist graph)
+COLOR_BG = '#FFFFFF' # General background, can be used for plot backgrounds if desired
+COLOR_TEXT = '#000000' # General text color
+
+COLOR_PRIMARY = '#4477AA' # Paul Tol Blue (Density 2022, Sex Ratio 2022, Male 2011 Dist)
+COLOR_SECONDARY = '#EE6677' # Paul Tol Red (Density 2011, Sex Ratio 2011)
+COLOR_MALE = '#66CCEE' # Paul Tol Cyan (Male 2022 Dist)
+COLOR_FEMALE = '#AA3377' # Paul Tol Purple (Female 2022 Dist)
+COLOR_FEMALE_2011_DIST = '#CC79A7' # Okabe-Ito Reddish Purple (Female 2011 Dist)
+# --- End New Color Palette ---
 
 
 # load data from CSV files
@@ -53,7 +55,7 @@ def load_data(age_gender_csv_path, density_csv_path):
     return df_age_gender_raw, df_density_raw
 
 @st.cache_data
-def preprocess_density_data_wide(df_density_raw): # Renamed as it returns wide format
+def preprocess_density_data_wide(df_density_raw):
     if df_density_raw.empty:
         return pd.DataFrame()
     df_density = df_density_raw.copy()
@@ -79,19 +81,17 @@ def preprocess_density_data_wide(df_density_raw): # Renamed as it returns wide f
 @st.cache_data
 def melt_density_data(df_density_wide):
     if df_density_wide.empty or not all(col in df_density_wide.columns for col in ['code', 'name', 'geography', 'density_2011', 'density_2022']):
-        # Ensure essential ID columns and data columns are present
         st.warning("Cannot melt density data: essential columns missing from wide format density data.")
         return pd.DataFrame()
 
     df_density_melted = df_density_wide.melt(
-        id_vars=['code', 'name', 'geography'], # Removed 'area_sq_km' as it's not year-specific for density values
+        id_vars=['code', 'name', 'geography'],
         value_vars=['density_2011', 'density_2022'],
         var_name='Year_Col_Density',
         value_name='Density'
     )
     df_density_melted['Year'] = df_density_melted['Year_Col_Density'].str.extract(r'(\d+)').astype(int)
     df_density_melted = df_density_melted.drop(columns=['Year_Col_Density'])
-    # Keep only relevant columns and drop rows where Density might be NaN after melting
     return df_density_melted[['code', 'name', 'geography', 'Year', 'Density']].dropna(subset=['Density'])
 
 
@@ -123,7 +123,6 @@ def create_merged_df(df_age_gender_melted, df_density_melted):
     if df_age_gender_melted.empty or df_density_melted.empty:
         st.warning("Cannot create merged data: one or both input dataframes are empty.")
         return pd.DataFrame()
-    # Ensure 'Year' column is int for merging
     df_age_gender_melted['Year'] = df_age_gender_melted['Year'].astype(int)
     df_density_melted['Year'] = df_density_melted['Year'].astype(int)
 
@@ -131,11 +130,8 @@ def create_merged_df(df_age_gender_melted, df_density_melted):
         df_age_gender_melted,
         df_density_melted,
         on=['code', 'name', 'geography', 'Year'],
-        how='left' # Keep all age/gender data, add density where available
+        how='left'
     )
-    # Drop rows where Density is NaN after merge if they are critical for an analysis
-    # For sex ratio vs density, we need Density, so drop if NaN
-    # merged_df.dropna(subset=['Density'], inplace=True) # Reconsider if this is too aggressive
     return merged_df
 
 # build other details
@@ -150,8 +146,8 @@ density_csv_file_path = 'MYE5_Table8.csv'
 
 df_age_gender_raw, df_density_raw = load_data(age_gender_csv_file_path, density_csv_file_path)
 
-df_density_wide = preprocess_density_data_wide(df_density_raw) # For original density chart
-df_density_melted = melt_density_data(df_density_wide)       # For merging
+df_density_wide = preprocess_density_data_wide(df_density_raw)
+df_density_melted = melt_density_data(df_density_wide)
 
 all_locations_master = []
 all_geographies_master = []
@@ -165,7 +161,7 @@ if not df_age_gender_raw.empty:
     if 'name' in df_age_gender_melted.columns: all_locations_master.extend(df_age_gender_melted['name'].unique())
     if 'geography' in df_age_gender_melted.columns: all_geographies_master.extend(df_age_gender_melted['geography'].unique())
 
-if not df_density_wide.empty: # Use df_density_wide for populating filters from density source
+if not df_density_wide.empty:
     if 'name' in df_density_wide.columns: all_locations_master.extend(df_density_wide['name'].unique())
     if 'geography' in df_density_wide.columns: all_geographies_master.extend(df_density_wide['geography'].unique())
 
@@ -188,7 +184,7 @@ def create_empty_figure(title_text):
 
 def get_vrect_coords_from_age_band(age_band_str):
     if age_band_str == 'All Ages': return None, None
-    if age_band_str == '75+': return '75', '90+' # '90+' is the max in 'age' column
+    if age_band_str == '75+': return '75', '90+'
     parts = age_band_str.split('-')
     if len(parts) == 2: return str(parts[0]), str(parts[1])
     return None, None
@@ -208,11 +204,10 @@ default_locations = [loc for loc in ['ENGLAND', 'SCOTLAND', 'WALES', 'NORTHERN I
 if not default_locations and locations_for_filter_options: default_locations = locations_for_filter_options[:min(4, len(locations_for_filter_options))]
 global_selected_locations = st.sidebar.multiselect("Select Location(s):", options=locations_for_filter_options, default=default_locations)
 
-# Filter main dataframes based on selected locations and geographies
-df_display_melted = pd.DataFrame() # For age/gender charts
-df_display_detail = pd.DataFrame() # For age distribution
-df_display_density = pd.DataFrame() # For original density chart (wide)
-df_display_merged = pd.DataFrame() # For new merged data charts
+df_display_melted = pd.DataFrame()
+df_display_detail = pd.DataFrame()
+df_display_density = pd.DataFrame()
+df_display_merged = pd.DataFrame()
 
 if not df_age_gender_melted.empty:
     master_filter_age_gender = df_age_gender_melted['name'].isin(global_selected_locations) & df_age_gender_melted['geography'].isin(selected_geographies)
@@ -242,7 +237,7 @@ global_selected_age_band = st.sidebar.selectbox("Select Age Band (for applicable
 st.title("UK Population Dashboard: 2011 vs 2022")
 st.markdown("---")
 
-# 1: Population Density Comparison (Original - uses df_display_density)
+# 1: Population Density Comparison
 st.header("1. Population Density Comparison")
 if df_display_density.empty:
     if df_density_wide.empty and not df_density_raw.empty: st.plotly_chart(create_empty_figure("Density data could not be processed."), use_container_width=True)
@@ -256,7 +251,7 @@ else:
         if 'density_2011' in filtered_df_density_chart.columns and not filtered_df_density_chart['density_2011'].dropna().empty:
             fig_density.add_trace(go.Bar(
                 x=filtered_df_density_chart['name'], y=filtered_df_density_chart['density_2011'], name='Density 2011',
-                marker_color=COLOR_SECONDARY if global_selected_year_display == "Comparison (2011 & 2022)" else COLOR_PRIMARY,
+                marker_color=COLOR_SECONDARY,
                 hovertemplate=("**%{x}**<br>2011 Density: %{y:.1f} per sq km<extra></extra>")
             ))
             plot_data_exists_density = True
@@ -278,13 +273,13 @@ else:
             barmode='group' if global_selected_year_display == "Comparison (2011 & 2022)" else 'overlay',
             hovermode='x unified', legend_title_text='Year',
             xaxis={'categoryorder': 'array', 'categoryarray': sorted(filtered_df_density_chart['name'].unique())},
-            font={'family': FONT_FAMILY}, margin=dict(l=40, r=20, t=60, b=40)
+            font={'family': FONT_FAMILY, 'color': COLOR_TEXT}, margin=dict(l=40, r=20, t=60, b=40)
         )
         st.plotly_chart(fig_density, use_container_width=True)
 st.markdown("---")
 
 
-# 2: Population Age Distribution (Original - uses df_display_detail)
+# 2: Population Age Distribution
 st.header("2. Population Age Distribution")
 loc_for_age_dist = None
 if not df_display_detail.empty:
@@ -303,10 +298,10 @@ if loc_for_age_dist and not df_display_detail.empty:
     data_found_for_age_dist = False
     chart_df_age_detail = df_display_detail[
         (df_display_detail['name'] == loc_for_age_dist) &
-        (df_display_detail['sex'].isin(global_selected_sex_codes)) # Global sex filter applies here
+        (df_display_detail['sex'].isin(global_selected_sex_codes))
     ].sort_values('age_numeric')
     if not chart_df_age_detail.empty:
-        for gender_code_loop in global_selected_sex_codes: # Loop through selected sexes
+        for gender_code_loop in global_selected_sex_codes:
             gender_specific_df = chart_df_age_detail[chart_df_age_detail['sex'] == gender_code_loop]
             if not gender_specific_df.empty:
                 data_found_for_age_dist = True
@@ -323,14 +318,14 @@ if loc_for_age_dist and not df_display_detail.empty:
     else:
         title_age_dist = f'Pop Age Distribution in {loc_for_age_dist}'
         if global_selected_year_display != "Comparison (2011 & 2022)": title_age_dist += f' ({global_selected_year_display.replace(" Only", "")})'
-        fig_age_gender.update_layout(title=title_age_dist, xaxis_title='Age', yaxis_title='Est. Population', xaxis={'type': 'category'}, hovermode='x unified', legend_title_text='Sex & Year', font={'family': FONT_FAMILY}, margin=dict(l=40, r=20, t=60, b=40))
+        fig_age_gender.update_layout(title=title_age_dist, xaxis_title='Age', yaxis_title='Est. Population', xaxis={'type': 'category'}, hovermode='x unified', legend_title_text='Sex & Year', font={'family': FONT_FAMILY, 'color': COLOR_TEXT}, margin=dict(l=40, r=20, t=60, b=40))
         if global_selected_age_band != 'All Ages':
             x0_h, x1_h = get_vrect_coords_from_age_band(global_selected_age_band)
             if x0_h is not None and x1_h is not None: fig_age_gender.add_vrect(x0=x0_h, x1=x1_h, fillcolor="rgba(128,128,128,0.2)", layer="below", line_width=0)
         st.plotly_chart(fig_age_gender, use_container_width=True)
 st.markdown("---")
 
-# 3: Gender Population Comparison (Original - uses df_display_melted)
+# 3: Gender Population Comparison
 st.header("3. Gender Population Comparison")
 year_for_gender_comp_actual = None
 if global_selected_year_display == "2011 Only": year_for_gender_comp_actual = 2011
@@ -347,13 +342,13 @@ else:
     age_title_part = f"({global_selected_age_band})"
     if global_selected_age_band != 'All Ages':
         chart_df_gender_melted = chart_df_gender_melted[chart_df_gender_melted['age_band'] == global_selected_age_band]
-    chart_df_gender_melted = chart_df_gender_melted[chart_df_gender_melted['sex'].isin(global_selected_sex_codes)] # Global sex filter applies
+    chart_df_gender_melted = chart_df_gender_melted[chart_df_gender_melted['sex'].isin(global_selected_sex_codes)]
     if chart_df_gender_melted.empty: st.plotly_chart(create_empty_figure(f"No data for gender comparison in {year_for_gender_comp_actual} {age_title_part} with filters."), use_container_width=True)
     else:
         grouped_df_gender = chart_df_gender_melted.groupby(['name', 'sex'])['Population'].sum().reset_index().sort_values(by=['name', 'sex'])
         fig_gender_comp = go.Figure()
         plot_data_exists_gender = False
-        for sex_code_loop in global_selected_sex_codes: # Loop through selected sexes
+        for sex_code_loop in global_selected_sex_codes:
             gender_label_loop = genders_map[sex_code_loop]
             df_sex_specific = grouped_df_gender[grouped_df_gender['sex'] == sex_code_loop]
             if not df_sex_specific.empty:
@@ -362,21 +357,19 @@ else:
                 fig_gender_comp.add_trace(go.Bar(x=df_sex_specific['name'], y=df_sex_specific['Population'], name=gender_label_loop, marker_color=color, hovertemplate=(f"<b>%{{x}}</b><br>{gender_label_loop}s: %{{y:,}}<br>Year: {year_for_gender_comp_actual}<br>Age Band: {global_selected_age_band}<extra></extra>")))
         if not plot_data_exists_gender: st.plotly_chart(create_empty_figure(f"No data for selected sex(es) in {year_for_gender_comp_actual} {age_title_part}."), use_container_width=True)
         else:
-            fig_gender_comp.update_layout(title=f'Pop by Sex in {year_for_gender_comp_actual} {age_title_part}', xaxis_title='Location', yaxis_title='Population', barmode='group', hovermode='x unified', legend_title_text='Sex', xaxis={'categoryorder': 'array', 'categoryarray': sorted(grouped_df_gender['name'].unique())}, font={'family': FONT_FAMILY}, margin=dict(l=40, r=20, t=60, b=40))
+            fig_gender_comp.update_layout(title=f'Pop by Sex in {year_for_gender_comp_actual} {age_title_part}', xaxis_title='Location', yaxis_title='Population', barmode='group', hovermode='x unified', legend_title_text='Sex', xaxis={'categoryorder': 'array', 'categoryarray': sorted(grouped_df_gender['name'].unique())}, font={'family': FONT_FAMILY, 'color': COLOR_TEXT}, margin=dict(l=40, r=20, t=60, b=40))
             st.plotly_chart(fig_gender_comp, use_container_width=True)
 st.markdown("---")
 
 
-# 4. Sex Ratio by Density (NEW - uses df_display_merged)
+# 4. Sex Ratio by Density
 st.header("4. Sex Ratio by Population Density")
-st.info("Sex ratio is calculated as Males per 100 Females. This chart ignores the global 'Select Sex' filter.")
+st.markdown("Sex ratio is calculated as Males per 100 Females. This chart ignores the global 'Select Sex' filter.")
 
 if df_display_merged.empty or 'Density' not in df_display_merged.columns:
     st.plotly_chart(create_empty_figure("Merged data with density is not available for sex ratio analysis. Check filters or data files."), use_container_width=True)
 else:
     sex_ratio_data = df_display_merged.copy()
-
-    # Apply Year Filter
     years_to_plot_sex_ratio = []
     if global_selected_year_display == "2011 Only": years_to_plot_sex_ratio = [2011]
     elif global_selected_year_display == "2022 Only": years_to_plot_sex_ratio = [2022]
@@ -386,32 +379,22 @@ else:
         st.warning("Please select a year or 'Comparison' to display sex ratio by density.")
     else:
         sex_ratio_data = sex_ratio_data[sex_ratio_data['Year'].isin(years_to_plot_sex_ratio)]
-
-        # Apply Age Band Filter
         age_band_title_part_sr = f"(Age Band: {global_selected_age_band})"
         if global_selected_age_band != 'All Ages':
             sex_ratio_data = sex_ratio_data[sex_ratio_data['age_band'] == global_selected_age_band]
         else:
             age_band_title_part_sr = "(All Ages)"
 
-
         if sex_ratio_data.empty or sex_ratio_data['Density'].dropna().empty:
             st.plotly_chart(create_empty_figure(f"No data for sex ratio analysis with current filters {age_band_title_part_sr}."), use_container_width=True)
         else:
-            # Aggregate Male and Female populations
-            # Group by all identifying columns including Density and Year, then unstack sex
             pop_by_sex_for_ratio = sex_ratio_data.groupby(
                 ['code', 'name', 'geography', 'Year', 'Density', 'sex']
             )['Population'].sum().unstack(fill_value=0).reset_index()
 
             if 'M' not in pop_by_sex_for_ratio.columns: pop_by_sex_for_ratio['M'] = 0
             if 'F' not in pop_by_sex_for_ratio.columns: pop_by_sex_for_ratio['F'] = 0
-
-            # Calculate Sex Ratio (Males per 100 Females)
-            # Avoid division by zero by replacing F=0 with NaN, which results in NaN for sex_ratio
             pop_by_sex_for_ratio['sex_ratio'] = (pop_by_sex_for_ratio['M'] / pop_by_sex_for_ratio['F'].replace(0, pd.NA)) * 100
-
-            # Drop rows where sex_ratio could not be calculated (e.g., F=0 or Density=NaN)
             final_plot_data_sr = pop_by_sex_for_ratio.dropna(subset=['Density', 'sex_ratio'])
 
             if final_plot_data_sr.empty:
@@ -419,21 +402,15 @@ else:
             else:
                 fig_sex_ratio_density = go.Figure()
                 plot_data_exists_sr = False
-
                 for year_val in years_to_plot_sex_ratio:
                     year_data_sr = final_plot_data_sr[final_plot_data_sr['Year'] == year_val]
                     if not year_data_sr.empty:
                         plot_data_exists_sr = True
+                        marker_color_sr = COLOR_PRIMARY if year_val == 2022 else COLOR_SECONDARY
                         fig_sex_ratio_density.add_trace(go.Scatter(
-                            x=year_data_sr['Density'],
-                            y=year_data_sr['sex_ratio'],
-                            mode='markers',
-                            name=f'Sex Ratio {year_val}',
-                            marker=dict(
-                                color=COLOR_PRIMARY if year_val == 2022 else COLOR_SECONDARY,
-                                size=8, opacity=0.7
-                            ),
-                            text=year_data_sr['name'], # For hover
+                            x=year_data_sr['Density'], y=year_data_sr['sex_ratio'], mode='markers', name=f'Sex Ratio {year_val}',
+                            marker=dict(color=marker_color_sr, size=8, opacity=0.7),
+                            text=year_data_sr['name'],
                             hovertemplate=(
                                 "<b>%{text} (%{customdata[0]})</b><br>" +
                                 "Density: %{x:.1f} per sq km<br>" +
@@ -443,21 +420,17 @@ else:
                             ),
                             customdata=year_data_sr[['Year', 'M', 'F']]
                         ))
-
                 if not plot_data_exists_sr:
                     st.plotly_chart(create_empty_figure(f"No valid sex ratio data to plot for selected year(s) {age_band_title_part_sr}."), use_container_width=True)
                 else:
                     title_sr_density = f'Sex Ratio vs. Population Density {age_band_title_part_sr}'
-                    if len(years_to_plot_sex_ratio) == 1:
-                         title_sr_density += f' - {years_to_plot_sex_ratio[0]}'
-
+                    if len(years_to_plot_sex_ratio) == 1: title_sr_density += f' - {years_to_plot_sex_ratio[0]}'
                     fig_sex_ratio_density.update_layout(
                         title=title_sr_density,
                         xaxis_title='Population Density (people per sq km)',
                         yaxis_title='Sex Ratio (Males per 100 Females)',
-                        font=dict(family=FONT_FAMILY),
-                        hovermode='closest',
-                        legend_title_text='Year'
+                        font=dict(family=FONT_FAMILY, color=COLOR_TEXT),
+                        hovermode='closest', legend_title_text='Year'
                     )
                     st.plotly_chart(fig_sex_ratio_density, use_container_width=True)
 
