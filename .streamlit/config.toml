@@ -1,2 +1,3 @@
 [theme]
-primaryColor="#326ebd"
+base = 'system'
+# primaryColor="#326ebd"
