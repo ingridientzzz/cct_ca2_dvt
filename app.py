@@ -159,7 +159,7 @@ bins = [-1, 17, 24, 39, 59, 74, np.inf]
 labels = ['0-17', '18-24', '25-39', '40-59', '60-74', '75+']
 age_bands_options = ['All Ages'] + labels
 
-excel_file_path = 'your_data_file.xlsx'
+excel_file_path = './data/mye22final.xlsx'
 
 # --- MAIN DATA PIPELINE ---
 df_age_gender_raw, df_density_raw = load_data(excel_file_path)
