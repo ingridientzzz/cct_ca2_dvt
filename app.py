@@ -515,7 +515,10 @@ if loc_for_age_dist and not df_display_detail.empty: # Ensure loc_for_age_dist w
                             ))
                             data_found_for_age_dist = True # Moved inside successful trace add
         if not data_found_for_age_dist: # Check after trying to plot
-            st.plotly_chart(create_empty_figure(f"No age data to plot for {loc_for_age_dist} with current filters."), use_container_width=True)
+            st.plotly_chart(
+                create_empty_figure(f"No age data to plot for {loc_for_age_dist} with current filters."), 
+                use_container_width=True
+            )
         else:
             title_age_dist = f'Pop Age Distribution in {loc_for_age_dist}'
             if global_selected_year_display != "Comparison (2011 & 2022)":
@@ -534,9 +537,11 @@ if loc_for_age_dist and not df_display_detail.empty: # Ensure loc_for_age_dist w
                     )
             st.plotly_chart(fig_age_gender, use_container_width=True)
 elif loc_for_age_dist is None and not (df_age_gender_raw is None or df_age_gender_raw.empty):
-    # This case means df_display_detail was empty but raw data was there,
-    # and no loc_for_age_dist could be determined.
-    st.plotly_chart(create_empty_figure("No age data for current filters or no location selected/available."), use_container_width=True)
+    # This case means df_display_detail was empty but raw data was there, and no loc_for_age_dist could be determined.
+    st.plotly_chart(
+        create_empty_figure("No age data for current filters or no location selected/available."), 
+        use_container_width=True
+    )
 
 
 st.markdown("---")
@@ -622,11 +627,20 @@ st.info("Sex ratio is Males per 100 Females. This chart ignores the global 'Sele
 # df_display_merged comes from merged_df
 if df_display_merged.empty or 'Density' not in df_display_merged.columns or df_display_merged['Density'].isnull().all():
     if merged_df.empty and not (df_age_gender_melted.empty or df_density_melted.empty):
-        st.plotly_chart(create_empty_figure("Merged data for sex ratio analysis could not be created."), use_container_width=True)
+        st.plotly_chart(
+            create_empty_figure("Merged data for sex ratio analysis could not be created."),
+                use_container_width=True
+        )
     elif 'Density' not in df_display_merged.columns or df_display_merged['Density'].isnull().all():
-         st.plotly_chart(create_empty_figure("Density data missing or all null in merged data for sex ratio analysis."), use_container_width=True)
+         st.plotly_chart(
+            create_empty_figure("Density data missing or all null in merged data for sex ratio analysis."),
+            use_container_width=True
+        )
     else: # df_display_merged is empty due to filters
-        st.plotly_chart(create_empty_figure("No merged data with density for current filters for sex ratio analysis."), use_container_width=True)
+        st.plotly_chart(
+            create_empty_figure("No merged data with density for current filters for sex ratio analysis."),
+            use_container_width=True
+        )
 
 else:
     sex_ratio_data = df_display_merged.copy()
