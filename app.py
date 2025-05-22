@@ -234,7 +234,7 @@ if not df_age_gender_melted.empty and not df_density_melted.empty:
 all_locations = sorted(list(set(all_locations_master)))
 all_geographies = sorted(list(set(all_geographies_master)))
 
-# Warn if any preprocessing step failed (some warnings are now inside load_data or preprocessing)
+# Warn if any preprocessing step failed (some warnings inside load_data or preprocessing)
 if df_density_raw is not None and not df_density_raw.empty and df_density_wide.empty:
     st.warning("Failed to process density data (wide), though raw data was present.")
 if not df_density_wide.empty and df_density_melted.empty :
@@ -401,7 +401,7 @@ if df_display_density.empty:
          st.plotly_chart(create_empty_figure("Density data could not be processed."), use_container_width=True)
     elif df_density_raw is None or df_density_raw.empty: # Raw data itself was not loaded or empty
         st.plotly_chart(create_empty_figure("Density data not loaded or empty from source."), use_container_width=True)
-    else: # Data loaded and processed but current filters yield no results
+    else: # Data loaded and processed but current filters -> None
         st.plotly_chart(create_empty_figure("No density data for current filter selection."), use_container_width=True)
 else:
     # Plot density bars for selected years and locations
@@ -499,7 +499,7 @@ if loc_for_age_dist and not df_display_detail.empty: # Ensure loc_for_age_dist w
                                 line=dict(width=2, dash='dash'),
                                 hovertemplate=f"<b>{gender_label_loop} - Age: %{{x}}</b><br>2011 Pop: %{{y:,}}<extra></extra>"
                             ))
-                            data_found_for_age_dist = True # Moved inside successful trace add
+                            data_found_for_age_dist = True
                     if global_selected_year_display in ["2022 Only", "Comparison (2011 & 2022)"]:
                         if 'population_2022' in gender_specific_df.columns:
                             fig_age_gender.add_trace(go.Scatter(
