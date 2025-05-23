@@ -148,8 +148,10 @@ def create_merged_df(df_age_gender_melted, df_density_melted):
 
     return merged_df
 
-def create_empty_figure(title_text):
-    """Create an empty Plotly figure with title and hidden axes."""
+def create_empty_figure_graph(title_text):
+    """
+    Create an empty Plotly figure with title and hidden axes.
+    """
     fig = go.Figure()
     fig.update_layout(
         title=title_text,
@@ -308,7 +310,7 @@ st.markdown("---")
 # 1. Population Density Comparison
 st.header("1. Population Density Comparison")
 if df_display_density.empty:
-    st.plotly_chart(create_empty_figure("No density data available for selected filters."), use_container_width=True)
+    st.plotly_chart(create_empty_figure_graph("No density data available for selected filters."), use_container_width=True)
 else:
     # Plot density bars
     filtered_df_density = df_display_density.sort_values('name')
@@ -360,7 +362,7 @@ else:
         )
         st.plotly_chart(fig_density, use_container_width=True)
     else:
-        st.plotly_chart(create_empty_figure("No density data for selected year(s)."), use_container_width=True)
+        st.plotly_chart(create_empty_figure_graph("No density data for selected year(s)."), use_container_width=True)
 
 st.markdown("---")
 
@@ -457,11 +459,11 @@ if loc_for_age_dist and not df_display_detail.empty:
 
             st.plotly_chart(fig_age_gender, use_container_width=True)
         else:
-            st.plotly_chart(create_empty_figure(f"No age data to plot for {loc_for_age_dist} with current filters."), use_container_width=True)
+            st.plotly_chart(create_empty_figure_graph(f"No age data to plot for {loc_for_age_dist} with current filters."), use_container_width=True)
     else:
-        st.plotly_chart(create_empty_figure("Required columns missing in age data."), use_container_width=True)
+        st.plotly_chart(create_empty_figure_graph("Required columns missing in age data."), use_container_width=True)
 else:
-    st.plotly_chart(create_empty_figure("No age data available for selected filters."), use_container_width=True)
+    st.plotly_chart(create_empty_figure_graph("No age data available for selected filters."), use_container_width=True)
 
 st.markdown("---")
 
@@ -479,9 +481,9 @@ elif global_selected_year_display == "Comparison (2011 & 2022)":
     st.info("This chart defaults to 2022 data for 'Comparison (2011 & 2022)' year selection.")
 
 if df_display_melted.empty or 'Year' not in df_display_melted.columns:
-    st.plotly_chart(create_empty_figure("No gender data available for selected filters."), use_container_width=True)
+    st.plotly_chart(create_empty_figure_graph("No gender data available for selected filters."), use_container_width=True)
 elif not year_for_gender_comp:
-    st.plotly_chart(create_empty_figure("Select a year to display gender comparison."), use_container_width=True)
+    st.plotly_chart(create_empty_figure_graph("Select a year to display gender comparison."), use_container_width=True)
 else:
     # Filter data for selected year and age band
     chart_df_gender = df_display_melted[df_display_melted['Year'] == year_for_gender_comp].copy()
@@ -493,7 +495,7 @@ else:
         chart_df_gender = chart_df_gender[chart_df_gender['sex'].isin(global_selected_sex_codes)]
 
     if chart_df_gender.empty:
-        st.plotly_chart(create_empty_figure(
+        st.plotly_chart(create_empty_figure_graph(
             f"No data for gender comparison in {year_for_gender_comp} with current filters."
         ), use_container_width=True)
     else:
@@ -540,11 +542,11 @@ else:
                 )
                 st.plotly_chart(fig_gender, use_container_width=True)
             else:
-                st.plotly_chart(create_empty_figure(
+                st.plotly_chart(create_empty_figure_graph(
                     f"No data for selected sex(es) in {year_for_gender_comp} after grouping."
                 ), use_container_width=True)
         else:
-            st.plotly_chart(create_empty_figure("Required columns missing for gender comparison."), use_container_width=True)
+            st.plotly_chart(create_empty_figure_graph("Required columns missing for gender comparison."), use_container_width=True)
 
 st.markdown("---")
 
@@ -553,7 +555,7 @@ st.header("4. Sex Ratio by Population Density")
 st.info("Sex ratio is Males per 100 Females. This chart ignores the global 'Select Sex' filter.")
 
 if df_display_merged.empty or 'Density' not in df_display_merged.columns:
-    st.plotly_chart(create_empty_figure("No density data available for sex ratio analysis."), use_container_width=True)
+    st.plotly_chart(create_empty_figure_graph("No density data available for sex ratio analysis."), use_container_width=True)
 else:
     # Determine years to plot
     years_to_plot = []
@@ -575,7 +577,7 @@ else:
             sex_ratio_data = sex_ratio_data[sex_ratio_data['age_band'] == global_selected_age_band]
 
         if sex_ratio_data.empty:
-            st.plotly_chart(create_empty_figure(
+            st.plotly_chart(create_empty_figure_graph(
                 f"No data for sex ratio analysis with current filters."
             ), use_container_width=True)
         else:
@@ -596,7 +598,7 @@ else:
                 final_data = pop_by_sex.dropna(subset=['Density', 'sex_ratio'])
 
                 if final_data.empty:
-                    st.plotly_chart(create_empty_figure(
+                    st.plotly_chart(create_empty_figure_graph(
                         f"Not enough data to calculate sex ratios for the scatter plot."
                     ), use_container_width=True)
                 else:
@@ -649,11 +651,11 @@ else:
                         )
                         st.plotly_chart(fig_sex_ratio, use_container_width=True)
                     else:
-                        st.plotly_chart(create_empty_figure(
+                        st.plotly_chart(create_empty_figure_graph(
                             f"No valid sex ratio data to plot for selected year(s)."
                         ), use_container_width=True)
             else:
-                st.plotly_chart(create_empty_figure("Required columns missing for sex ratio analysis."), use_container_width=True)
+                st.plotly_chart(create_empty_figure_graph("Required columns missing for sex ratio analysis."), use_container_width=True)
 
 st.markdown("---")
 # footer
